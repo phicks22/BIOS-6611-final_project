@@ -1,0 +1,172 @@
+---
+title: "final-project-code"
+author: "Parker Hicks"
+date: "2023-11-29"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Load libraries
+```{r}
+library(ggplot2)
+library(dplyr)
+```
+
+## Read data
+```{r}
+bsd <- read.csv("Blood_Storage.csv")
+bsd <- na.omit(bsd)
+
+young <- subset(bsd, RBC.Age.Group == 1)
+middle <- subset(bsd, RBC.Age.Group == 2)
+old <- subset(bsd, RBC.Age.Group == 3)
+```
+
+# Mutate data for contingency table readability
+```{r}
+bsd <- bsd %>%
+  mutate(bGS_risk = ifelse(bGS < 2, "low_risk", "high_risk")) %>%
+  mutate(OrganPresence = ifelse(OrganConfined == 0, "not_present", "present")) %>%
+  mutate(Recurrence_ = ifelse(Recurrence == 0, "No", "Yes"))
+
+bgs_organ_tbl <- table(bsd$Recurrence_, bsd$bGS_risk)
+bgs_organ_tbl
+```
+
+# Define risk statistics functions
+```{r}
+# Risk Difference
+calculateRiskDifference <- function(a, b, c, d) {
+  p1 <- a / (a+b)
+  p2 <- c / (c+d)
+  
+  return(p1 - p2)
+}
+
+riskDifferenceSE <- function(a, c, n1, n2) {
+  p <- (a+c) / (n1+n2)
+  se <- sqrt(p*(1-p)*((1/n1) + (1/n2)))
+  
+  return(se)
+}
+
+# Risk Ratio
+calculateRiskRatio <- function(a, b, c, d) {
+  p1 <- a / (a+b)
+  p2 <- c / (c+d)
+  
+  return(p1 / p2)
+}
+
+riskRatioSE <- function(a, b, c, d) {
+  n1 <- a+b
+  n2 <- c+d
+  
+  se <- sqrt((b / (a*n1)) + (d / (c*n2)))
+  return(se)
+}
+
+calculateOddsRatio <- function(a, b, c, d) {
+  OR <- (a*d) / (b*c)
+  return(OR)
+}
+
+oddsRatioSE <- function(a, b, c, d) {
+  se <- sqrt((1 / a) + (1 / b) + (1 / c) + (1 / d))
+  return(se)
+}
+```
+
+# Calculate risk statistics
+```{r}
+# Set contingency table parameters
+a <- bgs_organ_tbl["Yes", "high_risk"]
+b <- bgs_organ_tbl["Yes", "low_risk"]
+c <- bgs_organ_tbl["No", "high_risk"]
+d <- bgs_organ_tbl["No", "low_risk"]
+
+# Set critical Z value
+Z <- 1.96
+ 
+# Calculate values
+risk_diff <- calculateRiskDifference(a, b, c, d)
+risk_diff_se <- riskDifferenceSE(a, c, a + b, c + d)
+risk_diff_ci <- c(risk_diff - (risk_diff_se * Z), 
+                  risk_diff + (risk_diff_se * Z)
+                  )
+
+risk_ratio <- calculateRiskRatio(a, b, c, d)
+risk_ratio_se <- riskRatioSE(a, b, c, d)
+risk_ratio_ci <- c(exp(log(risk_ratio) - (Z * risk_ratio_se)), 
+                   exp(log(risk_ratio) + (Z * risk_ratio_se))
+                   )
+
+odds_ratio <- calculateOddsRatio(a, b, c, d)
+odds_ratio_se <- oddsRatioSE(a, b, c, d)
+odds_ratio_ci <- c(exp(log(odds_ratio) - (Z * odds_ratio_se)), 
+                   exp(log(odds_ratio) + (Z * odds_ratio_se))
+                   )
+
+# Create a data frame
+result_table <- data.frame(
+  Measure = c("Risk Difference", "Risk Ratio", "Odds Ratio"),
+  Value = c(risk_diff, risk_ratio, odds_ratio),
+  Lower_CI = c(risk_diff_ci[1], risk_ratio_ci[1], odds_ratio_ci[1]),
+  Upper_CI = c(risk_diff_ci[2], risk_ratio_ci[2], odds_ratio_ci[2])
+)
+
+print(result_table)
+```
+
+# Mutate such that gleason scores only below 7 are low risk 
+```{r}
+bsd <- bsd %>%
+  mutate(bGS_risk = ifelse(bGS <= 2, "low_risk", "high_risk"))
+
+bgs_organ_tbl <- table(bsd$Recurrence_, bsd$bGS_risk)
+bgs_organ_tbl
+```
+
+# Calculate risk statistics for lower severity threshold
+```{r}
+# Set contingency table parameters
+a <- bgs_organ_tbl["Yes", "high_risk"]
+b <- bgs_organ_tbl["Yes", "low_risk"]
+c <- bgs_organ_tbl["No", "high_risk"]
+d <- bgs_organ_tbl["No", "low_risk"]
+
+# Set critical Z value
+Z <- 1.96
+ 
+# Calculate values
+risk_diff <- calculateRiskDifference(a, b, c, d)
+risk_diff_se <- riskDifferenceSE(a, c, a + b, c + d)
+risk_diff_ci <- c(risk_diff - (risk_diff_se * Z), 
+                  risk_diff + (risk_diff_se * Z)
+                  )
+
+risk_ratio <- calculateRiskRatio(a, b, c, d)
+risk_ratio_se <- riskRatioSE(a, b, c, d)
+risk_ratio_ci <- c(exp(log(risk_ratio) - (Z * risk_ratio_se)), 
+                   exp(log(risk_ratio) + (Z * risk_ratio_se))
+                   )
+
+odds_ratio <- calculateOddsRatio(a, b, c, d)
+odds_ratio_se <- oddsRatioSE(a, b, c, d)
+odds_ratio_ci <- c(exp(log(odds_ratio) - (Z * odds_ratio_se)), 
+                   exp(log(odds_ratio) + (Z * odds_ratio_se))
+                   )
+
+# Create a data frame
+result_table <- data.frame(
+  Measure = c("Risk Difference", "Risk Ratio", "Odds Ratio"),
+  Value = c(risk_diff, risk_ratio, odds_ratio),
+  Lower_CI = c(risk_diff_ci[1], risk_ratio_ci[1], odds_ratio_ci[1]),
+  Upper_CI = c(risk_diff_ci[2], risk_ratio_ci[2], odds_ratio_ci[2])
+)
+
+print(result_table)
+```
