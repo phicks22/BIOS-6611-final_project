@@ -1,0 +1,139 @@
+---
+output:
+  bookdown::pdf_document2:
+    toc: false
+    number_sections: false
+
+classoption:
+- twocolumn
+bibliography: references.bib
+csl: bios6611_vancouver.csl
+---
+# \textit{Gleason scores risk groups are predictive of biochemical recurrence of prostate cancer.}
+
+Parker Hicks
+\newline 
+Department of Biomedical Informatics
+\newline 
+Human Medical Genetics and Genomics Program
+\newline 
+University of Colorado Anschutz Medical Campus
+
+## Abstract
+The Gleason grading system is used in prostate cancer (PCa) prognosis for men as an assessment of cancer aggression. Although this system utilized in the current standard of care for PCa, it's effectiveness has been questioned in recent years. Thus, in this study, we seek to assess the effectiveness of the Gleason grading system and it's association with the biochemical cancer recurrence in a cohort of 298 men with varying levels of prostate cancer. We report that both mid to high Gleason scores give a strong prognosis of increased risk of cancer recurrence compared to patients assigned standard low-risk scores. Our results suggest that, although there can always be improvements made to a clinical diagnostic system, the Gleason grading system is proficient at estimating recurrence and time to recurrence in post-prostatectomy men with PCa. 
+
+Publicly-available and reproducible code for this analysis is available at <https://github.com/phicks22/BIOS-6611-final-project>.
+
+\textit{Keywords:} gleason score, risk, prostate cancer, prognosis
+
+## Introduction
+The Gleason grading system is used as a prognostic tool to assess the aggression of PCa. The scale ranges from 0-10 where a low scores indicates that the cancer cells are less likely to grow and spread quickly, while higher scores indicate a high likelihood of aggressive cancer. Although this grading system is practice as standard of care for PCa prognoses, the use of Gleason scores in clinical practice was questioned in recent years. It's been suggested that the Broders grading and Dukes staging systems are more effective prognostic estimators of PCa aggressiveness [@miles2019moving]. Thus, in this study we investigate the competency of Gleason scores for assessing an individual risk of aggressive cancer.
+
+\vspace{-5truemm}
+## Research Questions
+RQ: Is the Gleason grading system proficient at predicting biochemical recurrence of PCa?
+\newline
+SQ1: Are patients with higher Gleason scores at greater risk for biochemical recurrence of PCa compared to patients with lower  scores?
+\newline
+SQ2: What is the association between Gleason scores and time to biochemical recurrence of PCa?
+
+\vspace{-5truemm}
+## Materials and Methods
+Here, we reanalyze data from a cohort that was collected to assess the risk of biochemical recurrence of PCa after receiving blood transfusions of blood samples of varying ages after the subjects had undergone radical prostatectomy [@cata2011blood]. Gleason scores were assigned from a biopsy of the prostate where patients were assigned a score ranging from 0-10. Patients were placed into Gleason score groups 1, 2, and 3 with Gleason scores of 0-6, 7, 8-10 for each group respectively. Defined by the Prostate Cancer Foundation, scores up to 6 are considered to be low-grade cancers, 7 are intermediate-grade, and 8-10 high-grade [@Prostate_Cancer_Foundation_2023]. We refer to the low-, intermediate-, and high-grade groups as biopsy Gleason Score (bGS) groups 1, 2, and 3 respectively. 
+
+## Statistical Methods
+In our investigation of the risk of biochemical recurrence in patients with PCa, we calculated the odds ratio to gauge the likelihood of recurrence for each patient. We also performed a comparative evaluation of odds ratios across two risk thresholds to assess the difference of considering only bGS group 3 as a high-risk group or including the intermediate bGS as a high-risk classification. This comparison aimed at discerning potential variations in risk assessment based on the inclusion or exclusion of intermediate bGS. We then explored the differences in time to biochemical recurrence by conducting a one-way ANOVA across the 3 bGS groups, followed by a two-way ANOVA and subsequent post-hoc Fisher LSD test. The Barlett test for homogeneity of variance and Shapiro-Wilk test for normality were performed beforehand. Moreover, we conducted a permutation test of the mean difference in time to biochemical recurrence of PCa between high- and low-risk Gleason scores. This multifaceted approach provides a comprehensive analysis of the risk assessment landscape for Gleason scores in PCa recurrence prognoses.
+
+## Results
+Absolute and relative values for the number of biochemical recurrences, and the average time to recurrence (TTR) in months per bGS group are reported in Table 1. Immediately from these values it's observed that the frequency of recurrences increases as the bGS score increases and the average time to recurrence decreases from just over 3 years in the low risk group to just over 1 year in the highest risk group.
+
+\setlength{\headheight}{22.48878pt}
+\setlength{\topmargin}{-12pt}
+\begin{table}[h]
+\centering
+\begin{tabular}{|l|l|l|l|}
+\hline
+\multicolumn{4} { | c | }{\textbf{Table 1:} Summary of bGS groups.}\\ \hline
+\textit{Statistic}            & \textbf{bGS 1} & \textbf{bGS 2} & \textbf{bGS 3} \\ \hline
+N                    & 165            & 90             & 31             \\ \hline
+Recurrences(N)     & 11             & 21             & 15             \\ \hline
+Recurrence $\%$     & 6.67           & 23.3           & 48.4           \\ \hline
+Avg. TTR(mnt)       & 39.1              & 31.2              & 14.1     \\ \hline
+\end{tabular}
+\end{table}
+
+For the following odds ratio analyses we present risk statistics for the two thresholds of high-risk (HR) bGS groups. Moisaic plots summarizing the contingency tables for bGS HR thresholds are provided in Figures 1 and 2. It was observed that the risk difference, risk ratio, and odds ratio statistics show increased risk for experiencing biochemical recurrence of PCa for both considerations of bGS groups 2 and 3 and bGS group 3 as HR for recurrence (Tables 2 and 3). The odds ratios were found to be significantly different from 1 for bGS HR=2 (Fisher's Exact test, OR=5.82, 95% CI=(2.73, 12.36), p<0.001) and bGS HR=3 (Fisher's Exact test, OR=6.01, 95% CI=(2.56, 14.45), p<0.001)(Figure 3). 
+
+![Figure 1]("./imgs/mosaic_recurrence_bGS=2.png")
+<span class="caption">\textbf{Figure 1:} High and low risk group proportions for biochemical recurrence of prostate cancer where the high-risk group is considered to have a bGS > 5 (i.e. bGS groups 2 and 3).</span>
+
+![Figure 2]("./imgs/mosaic_recurrence_bGS=3.png")
+<span class="caption">\textbf{Figure 2:} High and low risk group proportions for biochemical recurrence of prostate cancer where the high-risk group is considered to have a bGS > 7 (i.e. bGS goup 3).</span>
+
+\setlength{\headheight}{22.48878pt}
+\setlength{\topmargin}{-12pt}
+\begin{table}[h]
+\centering
+\begin{tabular}{|l|l|l|l|}
+\hline
+\multicolumn{4} { | c | }{\textbf{Table 2:} Risk statistics for bGS at HR=2} \\ \hline
+\textit{Statistic} & \textbf{Value} & \textbf{Lower CI} & \textbf{Upper CI} \\ \hline
+Risk Diff    & 0.408          & 0.253             & 0.562 \\ \hline
+Risk Ratio         & 2.138          & 1.696             & 2.695 \\ \hline
+Odds Ratio         & 5.86           & 2.838             & 12.1  \\ \hline
+\end{tabular}
+\end{table}
+
+\setlength{\headheight}{22.48878pt}
+\setlength{\topmargin}{-12pt}
+\begin{table}[h]
+\centering
+\begin{tabular}{|l|l|l|l|}
+\hline
+\multicolumn{4} { | c | }{\textbf{Table 3:} Risk statistics for bGS at HR=3} \\ \hline
+\textit{Statistic} & \textbf{Value} & \textbf{Lower CI} & \textbf{Upper CI} \\ \hline
+Risk Diff    & 0.248          & 0.15             & 0.347 \\ \hline
+Risk Ratio         & 4.506          & 2.424             & 8.375 \\ \hline
+Odds Ratio         & 6.15           & 2.799             & 13.508  \\ \hline
+\end{tabular}
+\end{table}
+
+![Figure 3]("./imgs/OR_bGS_thresh.png")
+<span class="caption">\textbf{Figure 3:} Odds ratios across bGS high-risk thresholds.</span>
+
+Next, we investigated the relationship between bGS risk groups and the time to biochemical recurrence of PCa. Distributions for the time to recurrence of PCa across all bGS risk groups are shown in Figure 4. It's observed that as the bGS risk group increases, the less time it takes for a patient's PCa to resurface. 
+
+![Figure 4]("./imgs/bGS_ttr.png")
+<span class="caption">\textbf{Figure 4:} Time to biochemical recurrence of PCa across bGS risk groups.</span>
+
+Additionally, the time to recurrence of PCa is shown to be significantly difference across bGS risk groups (one-way ANOVA, F = 21.661, df = 2.00, p<0.001). A two-way ANOVA comparison across bGS groups shows significant differences in mean number of months to biochemical recurrence of PCa across all 3 bGS groups (Table 4), indicating that the higher the bGS risk group, the quicker the PCa will resurface. Moreover, a permutation test of the mean difference between bGS groups indicates that the mean difference in time to recurrence between high- and low-risk are significantly different (p<0.001) (Figure 5).
+
+\setlength{\headheight}{22.48878pt}
+\setlength{\topmargin}{-12pt}
+\begin{table}[h]
+\centering
+\begin{tabular}{|l|l|l|}
+\hline
+\multicolumn{3} { | c | }{\textbf{Table 4:} Mean differences across bGS groups.} \\ \hline
+\textit{bGS Group} & \textbf{Difference} & \textbf{p-value} \\ \hline
+2-1                  & -7.93               & 0.03             \\ \hline
+3-1                  & -25.0               & >0.001           \\ \hline
+3-2                  & -17.0               & 0.003            \\ \hline
+\end{tabular}
+\end{table}
+
+![Figure 5]("imgs/perm_meanDiff_recurrence_bGS=2.png")
+<span class="caption">\textbf{Figure 5:} Permutation distribution of the mean difference of time to PCa recurrence between high- and low-risk bGS groups (HR=2). Observed mean difference = 12.395. </span>
+
+
+## Discussion
+The odds ratio calculated in this study imply that bGS risk groups are clinically significant in determining whether or not a patient will experience biochemical recurrence of their prostate cancer, and we found that there was significant for both thresholds of Gleason scores > 5 (bGS groups 2 and 3) and scores > 7 (bGS group 3). Furthermore, the time to biochemical recurrence of PCa was significantly different across bGS groups and HR group thresholds. Taken together, these analyses indicate that the Gleason system is effective at guiding the prognosis of the recurrence of PCa post-prostatectomy.
+
+There could be potential confounders in our analyses. We didn't adjust for whether or not a tumor was confined to the prostate which could lead to quicker recurrence in individuals within the low-risk bGS group compared to high-risk bGS organ-confined patients. Similarly, we didn't adjust for patients who received preoperative therapies. Our bGS groups were also limited to pre-defined categories of groups 1, 2, and 3 and the exact biopsy Gleason scores were unavailable to us from this public dataset. Further studies should investigate the diagnostic capabilities across the true range of scores to assess the efficacy of each score ranging from 0-10 on the prognostication of PCa recurrence.
+
+## References
+
+\vspace{2mm} 
+
+<!-- Remove the following line of code if not using a .bib file to generate references -->
+<div id="refs"></div>

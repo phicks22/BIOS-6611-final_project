@@ -9,34 +9,85 @@ output: pdf_document
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
+## Notes
+- The dataset only has 287 subject, not 316 as was stated in the Blood Storage Dataset Introduction
+- It's unclear as to why not all patients are labeled as 1 for recurrence if the time to recurrence is recorded for all patients.
+
 ## Load libraries
 ```{r}
 library(ggplot2)
+library(ggmosaic)
 library(dplyr)
+library(DescTools)
 ```
 
 ## Read data
 ```{r}
-bsd <- read.csv("Blood_Storage.csv")
+bsd <- read.csv("./data/Blood_Storage.csv")
 bsd <- na.omit(bsd)
-
-young <- subset(bsd, RBC.Age.Group == 1)
-middle <- subset(bsd, RBC.Age.Group == 2)
-old <- subset(bsd, RBC.Age.Group == 3)
 ```
 
-# Mutate data for contingency table readability
+## Mutate data for contingency table readability
 ```{r}
 bsd <- bsd %>%
-  mutate(bGS_risk = ifelse(bGS < 2, "low_risk", "high_risk")) %>%
-  mutate(OrganPresence = ifelse(OrganConfined == 0, "not_present", "present")) %>%
+  mutate(bGS_risk_thresh2 = ifelse(bGS < 2, "low_risk", "high_risk")) %>%
+  mutate(bGS_risk_thresh3 = ifelse(bGS <= 2, "low_risk", "high_risk")) %>%
+  mutate(OrganPresence = ifelse(OrganConfined == 0, "No", "Yes")) %>%
   mutate(Recurrence_ = ifelse(Recurrence == 0, "No", "Yes"))
-
-bgs_organ_tbl <- table(bsd$Recurrence_, bsd$bGS_risk)
-bgs_organ_tbl
+  
+low_bGS <- subset(bsd, bGS_risk_thresh2 == "low_risk")
+high_bGS <- subset(bsd, bGS_risk_thresh2 == "high_risk")
 ```
 
-# Define risk statistics functions
+# Cohort summary
+```{r}
+bsd$Recurrence <- as.numeric(bsd$Recurrence)
+
+# Means of variables
+bsd %>% 
+  group_by(bGS) %>%
+  summarise(across(where(is.numeric), ~ mean(.x)))
+
+# Sums of variables
+bsd %>% 
+  group_by(bGS) %>%
+  summarise(across(where(is.numeric), sum))
+
+# Sample size of groups
+bsd %>% 
+  group_by(bGS) %>%
+  summarise(N = length(bGS))
+```
+
+## Plot contingency table
+```{r}
+ggplot(data=bsd) +
+  theme_minimal() +
+  geom_mosaic(aes(x=bGS_risk_thresh2, fill=Recurrence_)) +
+  xlab("Biopsy Gelason Score (HR threshold = 2)") +
+  ylab("Biochemical Recurrence") +
+  theme(axis.text=element_text(size=11), 
+        axis.title=element_text(size=13)
+        )
+
+# ggsave("imgs/mosaic_recurrence_bGS=2.png", dpi=500)
+```
+
+## Plot contingency table
+```{r}
+ggplot(data=bsd) +
+  theme_minimal() +
+  geom_mosaic(aes(x=bGS_risk_thresh3, fill=Recurrence_)) +
+  xlab("Biopsy Gelason Score (HR threshold = 3)") +
+  ylab("Biochemical Recurrence") +
+  theme(axis.text=element_text(size=11), 
+        axis.title=element_text(size=13)
+        )
+
+# ggsave("imgs/mosaic_recurrence_bGS=3.png", dpi=500)
+```
+
+## Define risk statistics functions
 ```{r}
 # Risk Difference
 calculateRiskDifference <- function(a, b, c, d) {
@@ -80,93 +131,170 @@ oddsRatioSE <- function(a, b, c, d) {
 }
 ```
 
-# Calculate risk statistics
+## Calculate risk statistics
 ```{r}
-# Set contingency table parameters
-a <- bgs_organ_tbl["Yes", "high_risk"]
-b <- bgs_organ_tbl["Yes", "low_risk"]
-c <- bgs_organ_tbl["No", "high_risk"]
-d <- bgs_organ_tbl["No", "low_risk"]
+risk_table <- function(outcome, exposure, data) {
+  # Set contingency table parameters
+  contingency_tbl <- table(data[[outcome]], data[[exposure]])
+  a <- contingency_tbl["Yes", "high_risk"]
+  b <- contingency_tbl["Yes", "low_risk"]
+  c <- contingency_tbl["No", "high_risk"]
+  d <- contingency_tbl["No", "low_risk"]
 
-# Set critical Z value
-Z <- 1.96
- 
-# Calculate values
-risk_diff <- calculateRiskDifference(a, b, c, d)
-risk_diff_se <- riskDifferenceSE(a, c, a + b, c + d)
-risk_diff_ci <- c(risk_diff - (risk_diff_se * Z), 
-                  risk_diff + (risk_diff_se * Z)
-                  )
+  # Set critical Z value
+  Z <- 1.96
+  
+  # Calculate values
+  risk_diff <- calculateRiskDifference(a, b, c, d)
+  risk_diff_se <- riskDifferenceSE(a, c, a + b, c + d)
+  risk_diff_ci <- c(risk_diff - (risk_diff_se * Z), 
+                    risk_diff + (risk_diff_se * Z)
+  )
 
-risk_ratio <- calculateRiskRatio(a, b, c, d)
-risk_ratio_se <- riskRatioSE(a, b, c, d)
-risk_ratio_ci <- c(exp(log(risk_ratio) - (Z * risk_ratio_se)), 
-                   exp(log(risk_ratio) + (Z * risk_ratio_se))
-                   )
+  risk_ratio <- calculateRiskRatio(a, b, c, d)
+  risk_ratio_se <- riskRatioSE(a, b, c, d)
+  risk_ratio_ci <- c(exp(log(risk_ratio) - (Z * risk_ratio_se)), 
+                     exp(log(risk_ratio) + (Z * risk_ratio_se))
+  )
 
-odds_ratio <- calculateOddsRatio(a, b, c, d)
-odds_ratio_se <- oddsRatioSE(a, b, c, d)
-odds_ratio_ci <- c(exp(log(odds_ratio) - (Z * odds_ratio_se)), 
-                   exp(log(odds_ratio) + (Z * odds_ratio_se))
-                   )
+  odds_ratio <- calculateOddsRatio(a, b, c, d)
+  odds_ratio_se <- oddsRatioSE(a, b, c, d)
+  odds_ratio_ci <- c(exp(log(odds_ratio) - (Z * odds_ratio_se)), 
+                     exp(log(odds_ratio) + (Z * odds_ratio_se))
+  )
 
-# Create a data frame
-result_table <- data.frame(
-  Measure = c("Risk Difference", "Risk Ratio", "Odds Ratio"),
-  Value = c(risk_diff, risk_ratio, odds_ratio),
-  Lower_CI = c(risk_diff_ci[1], risk_ratio_ci[1], odds_ratio_ci[1]),
-  Upper_CI = c(risk_diff_ci[2], risk_ratio_ci[2], odds_ratio_ci[2])
+  # Create a data frame
+  result_table <- data.frame(
+    Measure = c("Risk Difference", "Risk Ratio", "Odds Ratio"),
+    Value = c(risk_diff, risk_ratio, odds_ratio),
+    Lower_CI = c(risk_diff_ci[1], risk_ratio_ci[1], odds_ratio_ci[1]),
+    Upper_CI = c(risk_diff_ci[2], risk_ratio_ci[2], odds_ratio_ci[2])
+  )
+  
+  return(result_table)
+}
+
+risk_table_bGS_thresh2 <- risk_table(outcome="Recurrence_", exposure="bGS_risk_thresh2", data=bsd)
+risk_table_bGS_thresh3 <- risk_table(outcome="Recurrence_", exposure="bGS_risk_thresh3", data=bsd)
+
+risk_table_bGS_thresh2
+risk_table_bGS_thresh3
+```
+
+# Plot odds ratios
+```{r}
+df <- data.frame(yAxis = c("bGS HR=2", "bGS HR=3"),
+  boxOdds = 
+   c(5.8604651, 6.1488971),
+  boxCILow = 
+   c(2.8384892, 2.7990454),
+  boxCIHigh = 
+  c(12.0997647, 13.507796)
 )
 
-print(result_table)
+
+ggplot(df, aes(x = boxOdds, y = yAxis)) +
+  geom_vline(aes(xintercept = 1), size = .75, linetype = 'dashed') +
+  geom_errorbarh(aes(xmax = boxCIHigh, xmin = boxCILow), size = 1, height = 
+      .2, color = 'gray50') +
+  geom_point(size = 5, color = 'orange') +
+  xlim(0, 15) +
+  theme_bw() +
+  theme(panel.grid.minor = element_blank(), axis.text=element_text(size=11), 
+        axis.title=element_text(size=13),
+        legend.position = "none") +
+  ylab('bGS risk threshold') +
+  xlab('Odds ratio')
+
+# ggsave("imgs/OR_bGS_thresh.png", dpi=500)
 ```
 
-# Mutate such that gleason scores only below 7 are low risk 
+## Compute permutation test
 ```{r}
-bsd <- bsd %>%
-  mutate(bGS_risk = ifelse(bGS <= 2, "low_risk", "high_risk"))
+bGS_thresh2 <- table(bsd$Recurrence_, bsd$bGS_risk_thresh2)
+bGS_thresh2 <- bGS_thresh2[c(2, 1),]
 
-bgs_organ_tbl <- table(bsd$Recurrence_, bsd$bGS_risk)
-bgs_organ_tbl
+bGS_thresh3 <- table(bsd$Recurrence_, bsd$bGS_risk_thresh3)
+bGS_thresh3 <- bGS_thresh3[c(2, 1),]
+
+fisher.test(bGS_thresh2)
+fisher.test(bGS_thresh3)
 ```
 
-# Calculate risk statistics for lower severity threshold
+## Plot Time to recurrence by bGS group
 ```{r}
-# Set contingency table parameters
-a <- bgs_organ_tbl["Yes", "high_risk"]
-b <- bgs_organ_tbl["Yes", "low_risk"]
-c <- bgs_organ_tbl["No", "high_risk"]
-d <- bgs_organ_tbl["No", "low_risk"]
+ttr_subset <- subset(bsd, select=c("Recurrence", "bGS", "TimeToRecurrence"))
+ttr_subset$Recurrence <- as.factor(ttr_subset$Recurrence)
+ttr_subset$bGS <- as.factor(ttr_subset$bGS)
+# ttr_subset <- filter(ttr_subset, Recurrence == 1)
+ggplot(ttr_subset, aes(x=bGS, y=TimeToRecurrence, fill=bGS)) +
+  geom_boxplot(size=.75) +
+  geom_jitter(alpha=.5) +
+  theme_minimal() +
+  xlab("Biopsy Gleason score group") +
+  ylab("Months to biochemical recurrence of PCa") +
+  theme(axis.text=element_text(size=11), 
+        axis.title=element_text(size=13),
+        legend.position = "none")
 
-# Set critical Z value
-Z <- 1.96
- 
-# Calculate values
-risk_diff <- calculateRiskDifference(a, b, c, d)
-risk_diff_se <- riskDifferenceSE(a, c, a + b, c + d)
-risk_diff_ci <- c(risk_diff - (risk_diff_se * Z), 
-                  risk_diff + (risk_diff_se * Z)
-                  )
-
-risk_ratio <- calculateRiskRatio(a, b, c, d)
-risk_ratio_se <- riskRatioSE(a, b, c, d)
-risk_ratio_ci <- c(exp(log(risk_ratio) - (Z * risk_ratio_se)), 
-                   exp(log(risk_ratio) + (Z * risk_ratio_se))
-                   )
-
-odds_ratio <- calculateOddsRatio(a, b, c, d)
-odds_ratio_se <- oddsRatioSE(a, b, c, d)
-odds_ratio_ci <- c(exp(log(odds_ratio) - (Z * odds_ratio_se)), 
-                   exp(log(odds_ratio) + (Z * odds_ratio_se))
-                   )
-
-# Create a data frame
-result_table <- data.frame(
-  Measure = c("Risk Difference", "Risk Ratio", "Odds Ratio"),
-  Value = c(risk_diff, risk_ratio, odds_ratio),
-  Lower_CI = c(risk_diff_ci[1], risk_ratio_ci[1], odds_ratio_ci[1]),
-  Upper_CI = c(risk_diff_ci[2], risk_ratio_ci[2], odds_ratio_ci[2])
-)
-
-print(result_table)
+# ggsave("imgs/bGS_ttr.png", dpi=500)
 ```
+
+## Test for homogenetity of variance of time to recurrence
+```{r}
+bartlett.test(TimeToRecurrence ~ bGS, data=ttr_subset)
+oneway.test(TimeToRecurrence ~ bGS, data=ttr_subset, var.equal = FALSE)
+```
+
+# Perform ANOVA and post-hoc LSD test
+```{r}
+bGS_aov <- aov(TimeToRecurrence ~ bGS, data=ttr_subset)
+PostHocTest(bGS_aov, method=c("lsd"))
+```
+
+# Test normality of time to recurrence
+```{r}
+shapiro.test(bsd$TimeToRecurrence)
+hist(bsd$TimeToRecurrence)
+```
+
+## Permutation test for the difference in time to recurrence from Gleason Scores
+```{r}
+set.seed(1234)
+treatment <- as.factor(bsd$bGS_risk_thresh2)
+outcome <- bsd$TimeToRecurrence
+
+#Difference in means
+original <- diff(tapply(outcome, treatment, mean))
+
+results<-vector('list',10000)
+for(i in 1:10000){
+  x <- split(sample(bsd$TimeToRecurrence), rep(1:2, c(143,144)))
+  results[[i]]<-mean(x[[1]]) - mean(x[[2]])  
+}
+
+permutation_df <- data.frame(perm_res = unlist(results))
+
+# p-value
+p <- (sum(unlist(results) > original) /10000) * 2
+cat("Permutation test p-value:", p)
+
+ggplot(permutation_df, aes(x = perm_res)) +
+  geom_histogram(binwidth = 0.75, fill = "lightblue", color = "black", alpha=0.7) +
+  labs(x = expression(bar("Time")[High~risk] - bar("Time")[Low~risk]), y = "Frequency") +
+  theme_minimal() +
+  theme(panel.grid = element_blank(),
+        axis.text=element_text(size=11),
+        axis.title=element_text(size=13)
+        ) +
+  xlim(-16, 16) +
+  geom_vline(xintercept = original, color = "blue", linetype = "dashed") +
+  annotate("text", x = original, y = 500, label = "Observed Mean Difference",  vjust = 0.5, color = "blue", size=4)
+
+# ggsave("imgs/perm_meanDiff_recurrence_bGS=2.png", dpi=500)
+```
+# Compare p-value to independence test
+```{r}
+independence_test(outcome ~ treatment)
+```
+
